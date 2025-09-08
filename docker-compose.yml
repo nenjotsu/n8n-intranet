@@ -1,0 +1,139 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      - GENERIC_TIMEZONE=Asia/Manila
+      - N8N_HOST=0.0.0.0
+      - N8N_DEFAULT_CREDENTIAL_BASE_URL=http://ollama:11434 
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres-17
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_SECURE_COOKIE=false
+    networks:
+      - ${NETWORK_NAME}
+    depends_on:
+      - postgres-17
+      - timescaledb
+      - qdrant
+      - pgvector-db
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - ${NETWORK_NAME}
+
+  postgres-17:
+    image: postgres:17
+    container_name: postgres-17
+    restart: always
+    ports:
+      - "6543:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-17-basic:/var/lib/postgresql/data
+    networks:
+      - ${NETWORK_NAME}
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: timescaledb
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=${TIMESCALEDB_DB}
+      - POSTGRES_USER=${TIMESCALEDB_USER}
+      - POSTGRES_PASSWORD=${TIMESCALEDB_PASSWORD}
+    volumes:
+      - timescale-data:/var/lib/postgresql/data
+    networks:
+      - ${NETWORK_NAME}
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    restart: always
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
+    networks:
+      - ${NETWORK_NAME}
+
+  pgvector-db:
+    image: pgvector/pgvector:pg17
+    container_name: pgvector-db
+    restart: always
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: ${PGVECTOR_DB}
+      POSTGRES_USER: ${PGVECTOR_USER}
+      POSTGRES_PASSWORD: ${PGVECTOR_PASSWORD}
+    volumes:
+      - pgvector-data:/var/lib/postgresql/data
+    networks:
+      - ${NETWORK_NAME}
+
+  # langflow:
+  #   image: langflowai/langflow:latest
+  #   restart: always
+  #   ports:
+  #     - "7860:7860"
+  #   environment:
+  #     LANGFLOW_DATABASE_URL: "postgresql://${PGVECTOR_USER}:${PGVECTOR_PASSWORD}@postgres:5434/${PGVECTOR_DB}"
+  #     LANGFLOW_HOST: 0.0.0.0
+  #     LANGFLOW_PORT: 7860
+  #     LANGFLOW_CONFIG_DIR: /app/langflow
+  #     LANGFLOW_SUPERUSER: ${LANGFLOW_SUPERUSER}
+  #     LANGFLOW_SUPERUSER_PASSWORD: ${LANGFLOW_SUPERUSER_PASSWORD}
+  #   depends_on:
+  #     - pgvector-db
+  #     - init-langflow-volume
+  #   networks:
+  #     - ${NETWORK_NAME}
+
+  # init-langflow-volume:
+  #   image: alpine:latest
+  #   command: chown -R 1000:1000 /app/langflow
+  #   volumes:
+  #     - langflow-data:/app/langflow
+  #   networks:
+  #     - ${NETWORK_NAME}
+    
+    # entrypoint: /bin/sh -c "chown -R 1000:1000 /app/langflow && python -m langflow run --host 0.0.0.0 --port 7860"
+
+networks:
+  n8n-ollama-network:
+    driver: bridge
+
+volumes:
+  n8n_data:
+  ollama_data:
+  postgres-17-basic:
+  timescale-data:
+  qdrant_storage:
+  pgvector-data:
+  # langflow-data:
