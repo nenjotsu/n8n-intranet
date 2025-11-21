@@ -9,8 +9,8 @@ services:
       - n8n_data:/home/node/.n8n
     environment:
       - GENERIC_TIMEZONE=Asia/Manila
-      - N8N_HOST=0.0.0.0
-      - N8N_DEFAULT_CREDENTIAL_BASE_URL=http://ollama:11434 
+      - N8N_HOST=localhost
+      - N8N_DEFAULT_CREDENTIAL_BASE_URL=http://n8n:5678 
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres-17
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
@@ -22,7 +22,7 @@ services:
     depends_on:
       - postgres-17
       - timescaledb
-      - qdrant
+      # - qdrant
       - pgvector-db
 
   ollama:
@@ -68,19 +68,19 @@ services:
     networks:
       - ${NETWORK_NAME}
 
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: qdrant
-    restart: always
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - qdrant_storage:/qdrant/storage
-    environment:
-      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
-    networks:
-      - ${NETWORK_NAME}
+  # qdrant:
+  #   image: qdrant/qdrant:latest
+  #   container_name: qdrant
+  #   restart: always
+  #   ports:
+  #     - "6333:6333"
+  #     - "6334:6334"
+  #   volumes:
+  #     - qdrant_storage:/qdrant/storage
+  #   environment:
+  #     QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
+  #   networks:
+  #     - ${NETWORK_NAME}
 
   pgvector-db:
     image: pgvector/pgvector:pg17
@@ -123,7 +123,7 @@ services:
   #   networks:
   #     - ${NETWORK_NAME}
     
-    # entrypoint: /bin/sh -c "chown -R 1000:1000 /app/langflow && python -m langflow run --host 0.0.0.0 --port 7860"
+  #   entrypoint: /bin/sh -c "chown -R 1000:1000 /app/langflow && python -m langflow run --host 0.0.0.0 --port 7860"
 
 networks:
   n8n-ollama-network:
@@ -136,4 +136,4 @@ volumes:
   timescale-data:
   qdrant_storage:
   pgvector-data:
-  # langflow-data:
+  langflow-data:
